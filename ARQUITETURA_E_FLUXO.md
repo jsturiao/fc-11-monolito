@@ -306,8 +306,8 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 │ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘         │
 │         │                 │                 │                 │                 │                 │           │
 └─────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼───────────┘
-            │                    │                    │                    │                    │
-            ▼                    ▼                    ▼                    ▼                    ▼
+          │                 │                 │                 │                 │                 │
+          ▼                 ▼                 ▼                 ▼                 ▼                 ▼
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                      REPOSITORY LAYER                                                         │
 │                                      (Data Access)                                                            │
@@ -322,21 +322,21 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 │ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘         │
 │         │                 │                 │                 │                 │                 │           │
 └─────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼─────────────────┼───────────┘
-            │                    │                    │                    │                    │
-            ▼                    ▼                    ▼                    ▼                    ▼
+          │                 │                 │                 │                 │                 │
+          ▼                 ▼                 ▼                 ▼                 ▼                 ▼
 ┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │                                       DATABASE LAYER                                                          │
 │                                                                                                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
-│  │   clients   │  │  products   │  │store_catalog│  │transactions │  │  invoices   │  │   orders    │         │
-│  │             │  │             │  │             │  │             │  │             │  │             │         │
-│  │ • id        │  │ • id        │  │ • id        │  │ • id        │  │ • id        │  │ • id        │         │
-│  │ • name      │  │ • name      │  │ • name      │  │ • orderId   │  │ • name      │  │ • clientId  │         │
-│  │ • email     │  │ • description│ │ • description│ │ • amount    │  │ • document  │  │ • status    │         │
-│  │ • document  │  │ • purchase  │  │ • salesPrice│  │ • status    │  │ • address   │  │ • total     │         │
-│  │ • address   │  │   Price     │  │             │  │ • createdAt │  │ • total     │  │ • paymentId │         │
-│  │ • createdAt │  │ • stock     │  │             │  │             │  │ • createdAt │  │ • invoiceId │         │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘         │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
+│  │   clients   │  │  products    │  │store_catalog │  │transactions │  │  invoices   │  │   orders    │       │
+│  │             │  │              │  │              │  │             │  │             │  │             │       │
+│  │ • id        │  │ • id         │  │ • id         │  │ • id        │  │ • id        │  │ • id        │       │
+│  │ • name      │  │ • name       │  │ • name       │  │ • orderId   │  │ • name      │  │ • clientId  │       │
+│  │ • email     │  │ • description│  │ • description│  │ • amount    │  │ • document  │  │ • status    │       │
+│  │ • document  │  │ • purchase   │  │ • salesPrice │  │ • status    │  │ • address   │  │ • total     │       │
+│  │ • address   │  │   Price      │  │              │  │ • createdAt │  │ • total     │  │ • paymentId │       │
+│  │ • createdAt │  │ • stock      │  │              │  │             │  │ • createdAt │  │ • invoiceId │       │
+│  └─────────────┘  └──────────────┘  └──────────────┘  └─────────────┘  └─────────────┘  └─────────────┘       │
 │                                                                               │                               │
 │                                                                               ▼                               │
 │                                                                    ┌─────────────┐                            │
@@ -370,7 +370,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────┐
 │  Admin          │       │  Client Admin   │       │  Add Client             │
-│  Interface      │─────▶ │  Facade         │──────▶│  Use Case              │
+│  Interface      │─────> │  Facade         │──────>│  Use Case               │
 │                 │       │                 │       │                         │
 │ • Form Data     │       │ • Input         │       │ • Business Rules        │
 │ • Validation    │       │   Validation    │       │ • Data Transformation   │
@@ -418,7 +418,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────┐
 │  Admin          │       │  Product Admin  │       │  Add Product            │
-│  Interface      │──────▶│  Facade         │──────▶│  Use Case              │
+│  Interface      │──────>│  Facade         │──────>│  Use Case               │
 │                 │       │                 │       │                         │
 │ • Product Form  │       │ • Input         │       │ • Validation Rules      │
 │ • Price Info    │       │   Validation    │       │ • Stock Validation      │
@@ -516,107 +516,95 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 ### **4. Fluxo Completo de Pedido (Checkout)**
 
 ```
-                              ┌─────────────────────────────────────────────────────────────┐
-                              │                    CHECKOUT ORCHESTRATION                   │
-                              └─────────────────────────────────────────────────────────────┘
+                    ┌───────────────────────────────────────────┐
+                    │        CHECKOUT ORCHESTRATION             │ 
+                    └───────────────────────────────────────────┘
 
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────────────────┐
-│  Customer       │       │  Checkout       │       │         Place Order                 │
-│  Request        │──────>│  Facade         │──────>│         Use Case                    │
-│                 │       │                 │       │                                     │
-│ • clientId      │       │ • Validates     │       │    MAIN ORCHESTRATOR                │
-│ • products[]    │       │ • Routes        │       │                                     │
-│ • quantities    │       │ • Coordinates   │       │ Coordinates all modules:            │
-└─────────────────┘       └─────────────────┘       └─────────────────────────────────────┘
-                                                                        │
-                    ┌───────────────────────────────────────────────────┼───────────────────────────────────────────────────┐
-                    │                                                   │                                                   │
-                    ▼                                                   │                                                   ▼
-        ┌─────────────────────────┐                                     │                                   ┌─────────────────────────┐
-        │    1. CLIENT            │                                     │                                   │    2. PRODUCT           │
-        │    VALIDATION           │                                     │                                   │    VALIDATION           │
-        └─────────────────────────┘                                     │                                   └─────────────────────────┘
-                    │                                                   │                                                   │
-                    ▼                                                   │                                                   ▼
-        ┌─────────────────────────┐                                     │                                   ┌─────────────────────────┐
-        │  Client Admin           │                                     │                                   │  Product Admin          │
-        │  Facade                 │                                     │                                   │  Facade                 │
-        │                         │                                     │                                   │                         │
-        │ • find(clientId)        │                                     │                                   │ • checkStock(productId) │
-        │ • validate existence    │                                     │                                   │ • validate availability │
-        └─────────────────────────┘                                     │                                   └─────────────────────────┘
-                    │                                                   │                                                   │
-                    ▼                                                   │                                                   ▼
-        ┌─────────────────────────┐                                     │                                   ┌─────────────────────────┐
-        │    Find Client          │                                     │                                   │    Check Stock          │
-        │    Use Case             │                                     │                                   │    Use Case             │
-        │                         │                                     │                                   │                         │
-        │ • business validation   │                                     │                                   │ • stock verification    │
-        │ • return client data    │                                     │                                   │ • availability check    │
-        └─────────────────────────┘                                     │                                   └─────────────────────────┘
-                    │                                                   │                                                   │
-                    │                                                   │                                                   │
-                    └───────────────────────────────────────────────────┼───────────────────────────────────────────────────┘
-                                                                        │
-                                                                        ▼
-                                                        ┌─────────────────────────┐
-                                                        │    3. PRODUCT           │
-                                                        │    INFORMATION          │
-                                                        └─────────────────────────┘
-                                                                        │
-                                                                        ▼
-                                                        ┌─────────────────────────┐
-                                                        │  Store Catalog          │
-                                                        │  Facade                 │
-                                                        │                         │
-                                                        │ • find(productId)       │
-                                                        │ • get sales price       │
-                                                        │ • product details       │
-                                                        └─────────────────────────┘
-                                                                        │
-                                                                        ▼
-                                                        ┌─────────────────────────┐
-                                                        │    Find Product         │
-                                                        │    Use Case             │
-                                                        │                         │
-                                                        │ • get product info      │
-                                                        │ • pricing data          │
-                                                        └─────────────────────────┘
-                                                                        │
-        ┌───────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────
-        │                                                               │                                                     │
-        ▼                                                               │                                                     ▼
-┌─────────────────────────┐                                             │                                     ┌─────────────────────────┐
-│    4. PAYMENT           │                                             │                                     │    5. INVOICE           │
-│    PROCESSING           │                                             │                                     │    GENERATION           │
-└─────────────────────────┘                                             │                                     └─────────────────────────┘
-            │                                                           │                                                      │
-            ▼                                                           │                                                      ▼
-┌─────────────────────────┐                                             │                                     ┌─────────────────────────┐
-│  Payment                │                                             │                                     │  Invoice                │
-│  Facade                 │                                             │                                     │  Facade                 │
-│                         │                                             │                                     │                         │
-│ • process(order)        │                                             │                                     │ • generate(data)        │
-│ • amount validation     │                                             │                                     │ • client + items        │
-└─────────────────────────┘                                             │                                     └─────────────────────────┘
-            │                                                           │                                                      │
-            ▼                                                           │                                                      ▼
-┌─────────────────────────┐                                             │                                     ┌─────────────────────────┐
-│    Process Payment      │                                             │                                     │    Generate Invoice     │
-│    Use Case             │                                             │                                     │    Use Case             │
-│                         │                                             │                                     │                         │
-│ • amount >= 100?        │                                             │                                     │ • create invoice        │
-│ • approve/decline       │                                             │                                     │ • calculate total       │
-└─────────────────────────┘                                             │                                     └─────────────────────────┘
-            │                                                           │                                                       │
-            │                                                           │                                                       │
-            └───────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────┘
-                                                                        │
-                                                                        ▼
-                                                        ┌─────────────────────────┐
-                                                        │    6. ORDER             │
-                                                        │    PERSISTENCE          │
-                                                        └─────────────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────────────┐
+│  Customer       │    │  Checkout       │    │    Place Order          │
+│  Request        │───>│  Facade         │───>│    Use Case             │
+│                 │    │                 │    │                         │
+│ • clientId      │    │ • Validates     │    │  MAIN ORCHESTRATOR      │
+│ • products[]    │    │ • Routes        │    │ • Coordinates modules   │
+│ • quantities    │    │ • Coordinates   │    │ • Controls workflow     │
+└─────────────────┘    └─────────────────┘    └─────────────────────────┘
+                                                          │
+                                                          ▼
+                              ┌─────────────────────────────────────────┐
+                              │           VALIDATION PHASE              │
+                              └─────────────────────────────────────────┘
+                                                          │
+                          ┌───────────────────────────────┼───────────────────────────────┐
+                          │                               │                               │
+                          ▼                               ▼                               ▼
+                ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
+                │  1. CLIENT       │        │  2. STOCK        │        │  3. PRODUCT      │
+                │  VALIDATION      │        │  VALIDATION      │        │  INFORMATION     │
+                └──────────────────┘        └──────────────────┘        └──────────────────┘
+                          │                               │                               │
+                          ▼                               ▼                               ▼
+                ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
+                │ Client Admin     │        │ Product Admin    │        │ Store Catalog    │
+                │ Facade           │        │ Facade           │        │ Facade           │
+                │                  │        │                  │        │                  │
+                │ • find(clientId) │        │ • checkStock()   │        │ • find()         │
+                │ • validate exist │        │ • availability   │        │ • sales price    │
+                └──────────────────┘        └──────────────────┘        └──────────────────┘
+                          │                               │                               │
+                          ▼                               ▼                               ▼
+                ┌──────────────────┐        ┌──────────────────┐        ┌──────────────────┐
+                │ Find Client      │        │ Check Stock      │        │ Find Product     │
+                │ Use Case         │        │ Use Case         │        │ Use Case         │
+                │                  │        │                  │        │                  │
+                │ • validation     │        │ • verification   │        │ • product info   │
+                │ • client data    │        │ • availability   │        │ • pricing data   │
+                └──────────────────┘        └──────────────────┘        └──────────────────┘
+                          │                               │                               │
+                          └───────────────────────────────┼───────────────────────────────┘
+                                                          │
+                                                          ▼
+                              ┌─────────────────────────────────────────┐
+                              │         PROCESSING PHASE                │
+                              └─────────────────────────────────────────┘
+                                                          │
+                                  ┌───────────────────────┼───────────────────────┐
+                                  │                       │                       │
+                                  ▼                       ▼                       ▼
+                        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+                        │  4. PAYMENT      │    │  5. INVOICE      │    │  6. ORDER        │
+                        │  PROCESSING      │    │  GENERATION      │    │  PERSISTENCE     │
+                        └──────────────────┘    └──────────────────┘    └──────────────────┘
+                                  │                       │                       │
+                                  ▼                       ▼                       ▼
+                        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+                        │ Payment Facade   │    │ Invoice Facade   │    │ Checkout         │
+                        │                  │    │                  │    │ Repository       │
+                        │ • process()      │    │ • generate()     │    │                  │
+                        │ • validation     │    │ • client+items   │    │ • save(order)    │
+                        └──────────────────┘    └──────────────────┘    └──────────────────┘
+                                  │                       │                       │
+                                  ▼                       ▼                       ▼
+                        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+                        │ Process Payment  │    │ Generate Invoice │    │ Order Saved      │
+                        │ Use Case         │    │ Use Case         │    │ to Database      │
+                        │                  │    │                  │    │                  │
+                        │ • amount≥100?    │    │ • create invoice │    │ • orders table   │
+                        │ • approve/decline│    │ • calculate total│    │ • all references │
+                        └──────────────────┘    └──────────────────┘    └──────────────────┘
+                                  │                       │                       │
+                                  └───────────────────────┼───────────────────────┘
+                                                          │
+                                                          ▼
+                                          ┌─────────────────────────┐
+                                          │    COMPLETE ORDER       │
+                                          │                         │
+                                          │ • Order ID              │
+                                          │ • Invoice ID            │
+                                          │ • Payment Status        │
+                                          │ • Total Amount          │
+                                          │ • Success Response      │
+                                          └─────────────────────────┘
+
                                                                         │
                                                                         ▼
                                                         ┌─────────────────────────┐
@@ -641,7 +629,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
                                                         │ • invoiceId             │
                                                         │ • createdAt             │
                                                         └─────────────────────────┘
-```
+
 
 **Passos Detalhados**:
 
@@ -697,7 +685,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────┐
 │  Payment        │       │  Payment        │       │  Process Payment        │
-│  Request        │─────▶│  Facade         │──────▶│  Use Case               │
+│  Request        │─────> │  Facade         │──────>│  Use Case               │
 │                 │       │                 │       │                         │
 │ • orderId       │       │ • Validates     │       │ • Business Logic        │
 │ • amount        │       │ • Routes        │       │ • Amount Validation     │
@@ -758,7 +746,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────┐
 │  Invoice        │       │  Invoice        │       │  Generate Invoice       │
-│  Request        │─────▶│  Facade         │──────▶│  Use Case               │
+│  Request        │─────> │  Facade         │──────>│  Use Case               │
 │                 │       │                 │       │                         │
 │ • name          │       │ • Input         │       │ • Business Logic        │
 │ • document      │       │   Validation    │       │ • Address Composition   │
