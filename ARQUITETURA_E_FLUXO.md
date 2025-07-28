@@ -461,7 +461,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────┐
 │  Customer       │       │  Store Catalog  │       │  Find Products          │
-│  Interface      │──────▶│  Facade         │──────▶│  Use Case              │
+│  Interface      │──────>│  Facade         │──────>│  Use Case               │
 │                 │       │                 │       │                         │
 │ • Search Query  │       │ • Query         │       │ • Search Logic          │
 │ • Filter Data   │       │   Processing    │       │ • Filter Application    │
@@ -522,7 +522,7 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────────────────────────┐
 │  Customer       │       │  Checkout       │       │         Place Order                 │
-│  Request        │──────▶│  Facade         │──────▶│         Use Case                   │
+│  Request        │──────>│  Facade         │──────>│         Use Case                    │
 │                 │       │                 │       │                                     │
 │ • clientId      │       │ • Validates     │       │    MAIN ORCHESTRATOR                │
 │ • products[]    │       │ • Routes        │       │                                     │
@@ -583,34 +583,34 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
                                                         │ • pricing data          │
                                                         └─────────────────────────┘
                                                                         │
-        ┌───────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────┐
-        │                                                               │                                                               │
-        ▼                                                               │                                                               ▼
-┌─────────────────────────┐                                             │                                             ┌─────────────────────────┐
-│    4. PAYMENT           │                                             │                                             │    5. INVOICE           │
-│    PROCESSING           │                                             │                                             │    GENERATION           │
-└─────────────────────────┘                                             │                                             └─────────────────────────┘
-            │                                                           │                                                             │
-            ▼                                                           │                                                             ▼
-┌─────────────────────────┐                                             │                                             ┌─────────────────────────┐
-│  Payment                │                                             │                                             │  Invoice                │
-│  Facade                 │                                             │                                             │  Facade                 │
-│                         │                                             │                                             │                         │
-│ • process(order)        │                                             │                                             │ • generate(data)        │
-│ • amount validation     │                                             │                                             │ • client + items        │
-└─────────────────────────┘                                             │                                             └─────────────────────────┘
-            │                                                           │                                                             │
-            ▼                                                           │                                                             ▼
-┌─────────────────────────┐                                             │                                             ┌─────────────────────────┐
-│    Process Payment      │                                             │                                             │    Generate Invoice     │
-│    Use Case             │                                             │                                             │    Use Case             │
-│                         │                                             │                                             │                         │
-│ • amount >= 100?        │                                             │                                             │ • create invoice        │
-│ • approve/decline       │                                             │                                             │ • calculate total       │
-└─────────────────────────┘                                             │                                             └─────────────────────────┘
-            │                                                           │                                                             │
-            │                                                           │                                                             │
-            └───────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┘
+        ┌───────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────
+        │                                                               │                                                     │
+        ▼                                                               │                                                     ▼
+┌─────────────────────────┐                                             │                                     ┌─────────────────────────┐
+│    4. PAYMENT           │                                             │                                     │    5. INVOICE           │
+│    PROCESSING           │                                             │                                     │    GENERATION           │
+└─────────────────────────┘                                             │                                     └─────────────────────────┘
+            │                                                           │                                                      │
+            ▼                                                           │                                                      ▼
+┌─────────────────────────┐                                             │                                     ┌─────────────────────────┐
+│  Payment                │                                             │                                     │  Invoice                │
+│  Facade                 │                                             │                                     │  Facade                 │
+│                         │                                             │                                     │                         │
+│ • process(order)        │                                             │                                     │ • generate(data)        │
+│ • amount validation     │                                             │                                     │ • client + items        │
+└─────────────────────────┘                                             │                                     └─────────────────────────┘
+            │                                                           │                                                      │
+            ▼                                                           │                                                      ▼
+┌─────────────────────────┐                                             │                                     ┌─────────────────────────┐
+│    Process Payment      │                                             │                                     │    Generate Invoice     │
+│    Use Case             │                                             │                                     │    Use Case             │
+│                         │                                             │                                     │                         │
+│ • amount >= 100?        │                                             │                                     │ • create invoice        │
+│ • approve/decline       │                                             │                                     │ • calculate total       │
+└─────────────────────────┘                                             │                                     └─────────────────────────┘
+            │                                                           │                                                       │
+            │                                                           │                                                       │
+            └───────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────┘
                                                                         │
                                                                         ▼
                                                         ┌─────────────────────────┐
