@@ -4,7 +4,7 @@ import Client from "../../../client-adm/domain/client.entity";
 import ClientAdmFacadeInterface from "../../../client-adm/facade/client-adm.facade.interface";
 import ProductAdmFacadeInterface from "../../../product-adm/facade/product-adm.facade.interface";
 import StoreCatalogFacadeInterface from "../../../store-catalog/facade/store-catalog.facade.interface";
-import Cliente from "../../domain/client.entity";
+import Order from "../../domain/order.entity";
 import Product from "../../domain/product.entity";
 import { PlaceOrderInputDto, PlaceOrderOutputDto } from "./place-order.dto";
 
@@ -34,11 +34,17 @@ export default class PlaceOrderUseCase implements UseCaseInterface {
 			input.products.map((p) => this.getProduct(p.productId))
 		);
 
-		const myClient = new Cliente({
+		const myClient = new Client({
 			id: new Id(client.id),
 			name: client.name,
 			email: client.email,
+			document: client.document,
 			address: client.address,
+		});
+
+		const order = new Order({
+			client: myClient,
+			products,
 		});
 
 		return {
