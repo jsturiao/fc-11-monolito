@@ -883,3 +883,588 @@ A arquitetura atual facilita a evolução:
 ## 🎯 Conclusão
 
 A arquitetura do FC Monolito demonstra como implementar um sistema monolítico modular robusto, seguindo as melhores práticas de Clean Architecture e DDD. A separação clara de responsabilidades, comunicação via Facades e organização em módulos independentes garantem um sistema maintível, testável e evolutivo.
+
+---
+
+# 🌐 API REST - Implementação Completa
+
+## 📋 Visão Geral da API
+
+A API REST do FC Monolito foi implementada seguindo os princípios da Clean Architecture, fornecendo 4 endpoints principais que integram todos os módulos do sistema através de suas Facades.
+
+### **Endpoints Implementados**
+
+| Método | Endpoint | Descrição | Módulo Principal |
+|--------|----------|-----------|------------------|
+| `POST` | `/products` | Cadastro de produtos | Product Admin |
+| `POST` | `/clients` | Cadastro de clientes | Client Admin |
+| `POST` | `/checkout` | Processo de compra | Checkout (Orquestrador) |
+| `GET` | `/invoice/:id` | Consulta de fatura | Invoice |
+
+## 🏗️ Arquitetura da API
+
+### **Estrutura de Diretórios**
+
+```
+src/
+├── api/
+│   ├── controllers/           # Controladores REST
+│   │   ├── product.controller.ts
+│   │   ├── client.controller.ts
+│   │   ├── checkout.controller.ts
+│   │   └── invoice.controller.ts
+│   ├── middlewares/           # Middlewares da API
+│   │   ├── error-handler.ts
+│   │   ├── request-logger.ts
+│   │   └── validation.ts
+│   ├── routes/               # Configuração de rotas
+│   │   └── index.ts
+│   ├── dtos/                 # Data Transfer Objects
+│   │   ├── product.dto.ts
+│   │   ├── client.dto.ts
+│   │   ├── checkout.dto.ts
+│   │   └── invoice.dto.ts
+│   └── factory/              # Factory da API
+│       └── api.factory.ts
+└── index.ts                  # Servidor Express integrado
+```
+
+### **Padrão de Implementação**
+
+Cada endpoint segue o padrão **Controller → Facade → UseCase → Repository**:
+
+1. **Controller**: Recebe requisição HTTP, valida dados, chama Facade
+2. **Facade**: Interface do módulo, delega para UseCase apropriado
+3. **UseCase**: Executa regras de negócio, usa Repository
+4. **Repository**: Persiste/recupera dados do banco
+
+## 🎛️ Controladores Implementados
+
+### **1. Product Controller**
+
+```typescript
+export class ProductController {
+  async create(req: Request, res: Response): Promise<void> {
+    try {
+      const productData: CreateProductDto = req.body;
+      
+      // Validação via middleware
+      await this.validateProductData(productData);
+      
+      // Chama Product Admin Facade
+      const facade = APIFactory.getProductAdmFacade();
+      await facade.addProduct({
+        id: new Id().id,
+        name: productData.name,
+        description: productData.description,
+        purchasePrice: productData.purchasePrice,
+        stock: productData.stock
+      });
+
+      res.status(201).json({
+        message: 'Product created successfully'
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+}
+```
+
+**Features**:
+- Validação de entrada via DTOs
+- Integração com Product Admin Facade
+- Tratamento de erros padronizado
+- Response HTTP apropriado
+
+### **2. Client Controller**
+
+```typescript
+export class ClientController {
+  async create(req: Request, res: Response): Promise<void> {
+    try {
+      const clientData: CreateClientDto = req.body;
+      
+      // Validação de dados incluindo endereço
+      await this.validateClientData(clientData);
+      
+      // Chama Client Admin Facade
+      const facade = APIFactory.getClientAdmFacade();
+      await facade.add({
+        id: new Id().id,
+        name: clientData.name,
+        email: clientData.email,
+        document: clientData.document,
+        address: {
+          street: clientData.address.street,
+          number: clientData.address.number,
+          complement: clientData.address.complement,
+          city: clientData.address.city,
+          state: clientData.address.state,
+          zipCode: clientData.address.zipCode
+        }
+      });
+
+      res.status(201).json({
+        message: 'Client created successfully'
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+}
+```
+
+**Features**:
+- Validação completa de dados do cliente
+- Validação específica de endereço
+- Integração com Client Admin Facade
+- Suporte a documentos e emails únicos
+
+### **3. Checkout Controller (Orquestrador Principal)**
+
+```typescript
+export class CheckoutController {
+  async processOrder(req: Request, res: Response): Promise<void> {
+    try {
+      const orderData: ProcessOrderDto = req.body;
+      
+      // Validação de dados de pedido
+      await this.validateOrderData(orderData);
+      
+      // Chama Checkout Facade (orquestrador principal)
+      const facade = APIFactory.getCheckoutFacade();
+      const result = await facade.placeOrder({
+        clientId: orderData.clientId,
+        products: orderData.products.map(p => ({
+          productId: p.productId,
+          quantity: p.quantity
+        }))
+      });
+
+      res.status(200).json({
+        orderId: result.id,
+        invoiceId: result.invoiceId,
+        total: result.total,
+        status: result.status,
+        message: 'Order processed successfully'
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+}
+```
+
+**Features**:
+- Orquestração completa do processo de compra
+- Validação de cliente e produtos
+- Verificação de estoque
+- Processamento de pagamento
+- Geração de fatura
+- Response completo com todos os dados
+
+### **4. Invoice Controller**
+
+```typescript
+export class InvoiceController {
+  async findById(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      
+      // Validação de UUID
+      await this.validateUUID(id);
+      
+      // Chama Invoice Facade
+      const facade = APIFactory.getInvoiceFacade();
+      const invoice = await facade.find({ id });
+
+      res.status(200).json({
+        id: invoice.id,
+        name: invoice.name,
+        document: invoice.document,
+        address: {
+          street: invoice.address.street,
+          number: invoice.address.number,
+          complement: invoice.address.complement,
+          city: invoice.address.city,
+          state: invoice.address.state,
+          zipCode: invoice.address.zipCode
+        },
+        items: invoice.items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price
+        })),
+        total: invoice.total,
+        createdAt: invoice.createdAt
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+}
+```
+
+**Features**:
+- Validação de UUID no parâmetro
+- Busca via Invoice Facade
+- Response completo com dados da fatura
+- Tratamento de faturas não encontradas
+
+## 🏭 API Factory - Gerenciamento de Dependências
+
+### **Padrão Singleton para Facades**
+
+```typescript
+export class APIFactory {
+  private static _clientAdmFacade: ClientAdmFacadeInterface;
+  private static _productAdmFacade: ProductAdmFacadeInterface;
+  private static _storeCatalogFacade: StoreCatalogFacadeInterface;
+  private static _paymentFacade: PaymentFacadeInterface;
+  private static _invoiceFacade: InvoiceFacadeInterface;
+  private static _checkoutFacade: CheckoutFacadeInterface;
+
+  static getClientAdmFacade(): ClientAdmFacadeInterface {
+    if (!this._clientAdmFacade) {
+      this._clientAdmFacade = ClientAdmFacadeFactory.create();
+    }
+    return this._clientAdmFacade;
+  }
+
+  static getCheckoutFacade(): CheckoutFacadeInterface {
+    if (!this._checkoutFacade) {
+      this._checkoutFacade = CheckoutFacadeFactory.create();
+    }
+    return this._checkoutFacade;
+  }
+
+  // ... outras facades
+}
+```
+
+**Vantagens**:
+- **Singleton Pattern**: Uma instância por Facade durante toda a aplicação
+- **Lazy Loading**: Facades criadas apenas quando necessárias
+- **Centralização**: Ponto único de acesso a todas as Facades
+- **Reutilização**: Evita criação desnecessária de objetos
+
+## 🛡️ Middlewares de Segurança e Validação
+
+### **1. Error Handler**
+
+```typescript
+export const errorHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', err);
+
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      error: true,
+      message: 'Validation failed',
+      details: {
+        validationErrors: err.details || []
+      }
+    });
+  }
+
+  if (err.message.includes('not found')) {
+    return res.status(404).json({
+      error: true,
+      message: err.message
+    });
+  }
+
+  res.status(500).json({
+    error: true,
+    message: 'Internal server error'
+  });
+};
+```
+
+### **2. Request Logger**
+
+```typescript
+export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
+  const timestamp = new Date().toISOString();
+  const method = req.method;
+  const url = req.url;
+  const ip = req.ip;
+
+  console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`);
+  
+  next();
+};
+```
+
+### **3. Validation Middleware**
+
+```typescript
+export const validate = (schema: any) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const { error } = schema.validate(req.body, { abortEarly: false });
+    
+    if (error) {
+      const validationErrors = error.details.map((detail: any) => 
+        `${detail.context?.label || 'Field'}: ${detail.message}`
+      );
+      
+      const validationError = new Error('Validation failed');
+      validationError.name = 'ValidationError';
+      (validationError as any).details = validationErrors;
+      
+      return next(validationError);
+    }
+    
+    next();
+  };
+};
+```
+
+## 📊 DTOs - Data Transfer Objects
+
+### **Exemplos de DTOs Implementados**
+
+```typescript
+// Product DTO
+export interface CreateProductDto {
+  name: string;
+  description: string;
+  salesPrice: number;
+  stock: number;
+}
+
+// Client DTO
+export interface CreateClientDto {
+  name: string;
+  email: string;
+  document: string;
+  address: {
+    street: string;
+    number: string;
+    complement: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  };
+}
+
+// Checkout DTO
+export interface ProcessOrderDto {
+  clientId: string;
+  products: {
+    productId: string;
+    quantity: number;
+  }[];
+}
+```
+
+## 🧪 Testes E2E - Estratégia Completa
+
+### **Estrutura de Testes**
+
+```
+src/__tests__/
+├── setup/
+│   └── test-setup.ts          # Configuração de banco e helpers
+├── api/
+│   ├── products.e2e.spec.ts   # Testes de produtos
+│   ├── clients.e2e.spec.ts    # Testes de clientes
+│   ├── checkout.e2e.spec.ts   # Testes de checkout
+│   ├── invoice.e2e.spec.ts    # Testes de fatura
+│   └── integration.e2e.spec.ts # Testes de integração
+└── scripts/
+    ├── run-e2e-tests.sh       # Script Linux/Mac
+    └── run-e2e-tests.ps1      # Script PowerShell
+```
+
+### **Test Setup Infrastructure**
+
+```typescript
+// test-setup.ts
+export const setupDatabase = async (): Promise<void> => {
+  await sequelize.sync({ force: true });
+  console.log('✅ Database synchronized for testing');
+};
+
+export const clearDatabase = async (): Promise<void> => {
+  await ClientModel.destroy({ where: {} });
+  await ProductModel.destroy({ where: {} });
+  // ... clear other tables
+};
+
+export const closeDatabase = async (): Promise<void> => {
+  await sequelize.close();
+};
+```
+
+### **Exemplos de Testes E2E**
+
+#### **1. Teste de Produtos**
+
+```typescript
+describe('Products API E2E Tests', () => {
+  it('should create a product successfully', async () => {
+    const productData = {
+      name: 'iPhone 14',
+      description: 'Apple iPhone 14 128GB',
+      salesPrice: 999.99,
+      stock: 50
+    };
+
+    const response = await request(app)
+      .post('/products')
+      .send(productData)
+      .expect(201);
+
+    expect(response.body.message).toBe('Product created successfully');
+  });
+
+  it('should return validation error for missing name', async () => {
+    const response = await request(app)
+      .post('/products')
+      .send({ description: 'Test' })
+      .expect(400);
+
+    expect(response.body.error).toBe(true);
+  });
+});
+```
+
+#### **2. Teste de Integração Completa**
+
+```typescript
+describe('Complete Purchase Flow', () => {
+  it('should complete a full purchase flow', async () => {
+    // 1. Create products
+    await request(app)
+      .post('/products')
+      .send(productData)
+      .expect(201);
+
+    // 2. Create client
+    await request(app)
+      .post('/clients')
+      .send(clientData)
+      .expect(201);
+
+    // 3. Process checkout
+    // 4. Verify invoice generation
+    // Complete integration test scenario
+  });
+});
+```
+
+### **Scripts de Execução**
+
+#### **package.json Scripts**
+
+```json
+{
+  "scripts": {
+    "test:e2e": "jest src/__tests__/api/ --verbose --detectOpenHandles",
+    "test:e2e:coverage": "jest src/__tests__/api/ --verbose --detectOpenHandles --coverage",
+    "test:products": "jest src/__tests__/api/products.e2e.spec.ts --verbose",
+    "test:clients": "jest src/__tests__/api/clients.e2e.spec.ts --verbose",
+    "test:checkout": "jest src/__tests__/api/checkout.e2e.spec.ts --verbose",
+    "test:invoice": "jest src/__tests__/api/invoice.e2e.spec.ts --verbose",
+    "test:integration": "jest src/__tests__/api/integration.e2e.spec.ts --verbose"
+  }
+}
+```
+
+## 🔄 Fluxo de Integração da API
+
+### **Diagrama de Integração API ↔ Módulos**
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                                API REST INTEGRATION                                     │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   POST /products│    │   POST /clients │    │  POST /checkout │    │ GET /invoice/:id│
+│                 │    │                 │    │                 │    │                 │
+│ • name          │    │ • name          │    │ • clientId      │    │ • id (UUID)     │
+│ • description   │    │ • email         │    │ • products[]    │    │                 │
+│ • salesPrice    │    │ • document      │    │   - productId   │    │ Returns:        │
+│ • stock         │    │ • address       │    │   - quantity    │    │ • invoice data  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │                       │
+         ▼                       ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Product       │    │   Client        │    │   Checkout      │    │   Invoice       │
+│   Controller    │    │   Controller    │    │   Controller    │    │   Controller    │
+│                 │    │                 │    │                 │    │                 │
+│ • Validation    │    │ • Validation    │    │ • Validation    │    │ • Validation    │
+│ • Error Handle  │    │ • Error Handle  │    │ • Error Handle  │    │ • Error Handle  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │                       │
+         ▼                       ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   API Factory   │    │   API Factory   │    │   API Factory   │    │   API Factory   │
+│                 │    │                 │    │                 │    │                 │
+│ getProductAdm   │    │ getClientAdm    │    │ getCheckout     │    │ getInvoice      │
+│ Facade()        │    │ Facade()        │    │ Facade()        │    │ Facade()        │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │                       │
+         ▼                       ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ Product Admin   │    │ Client Admin    │    │ Checkout Facade │    │ Invoice Facade  │
+│ Facade          │    │ Facade          │    │                 │    │                 │
+│                 │    │                 │    │ ┌─────────────┐ │    │ • find(id)      │
+│ • addProduct()  │    │ • add()         │    │ │ORCHESTRATOR │ │    │                 │
+│                 │    │                 │    │ │             │ │    │                 │
+│                 │    │                 │    │ │Coordinates: │ │    │                 │
+│                 │    │                 │    │ │• Client     │ │    │                 │
+│                 │    │                 │    │ │• Product    │ │    │                 │
+│                 │    │                 │    │ │• Catalog    │ │    │                 │
+│                 │    │                 │    │ │• Payment    │ │    │                 │
+│                 │    │                 │    │ │• Invoice    │ │    │                 │
+│                 │    │                 │    │ └─────────────┘ │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🎯 Resultados e Benefícios da Implementação
+
+### **1. API REST Completa**
+✅ **4 endpoints funcionais** integrados com todos os módulos  
+✅ **Validação robusta** com DTOs e middlewares  
+✅ **Tratamento de erros** padronizado  
+✅ **Documentação** clara de contratos  
+
+### **2. Testes E2E Abrangentes**
+✅ **Cobertura completa** de todos os endpoints  
+✅ **Cenários de sucesso** e falha  
+✅ **Testes de integração** entre módulos  
+✅ **Infraestrutura de testes** reutilizável  
+
+### **3. Padrões de Qualidade**
+✅ **Clean Architecture** mantida na API  
+✅ **Separation of Concerns** entre camadas  
+✅ **Dependency Injection** via Factory  
+✅ **Error Handling** consistente  
+
+### **4. Facilidade de Manutenção**
+✅ **Código organizado** e previsível  
+✅ **Testes automatizados** garantindo qualidade  
+✅ **Scripts de execução** para diferentes ambientes  
+✅ **Documentação** atualizada  
+
+## 📈 Próximos Passos
+
+### **Melhorias Futuras**
+1. **Autenticação e Autorização**: JWT, OAuth2
+2. **Rate Limiting**: Controle de requisições por IP
+3. **Cache**: Redis para consultas frequentes
+4. **Documentação**: Swagger/OpenAPI
+5. **Logs**: Estruturados com Winston
+6. **Monitoramento**: Health checks e métricas
+7. **Paginação**: Para endpoints de listagem
+8. **Filtros**: Query parameters para busca
+
+### **Evolução Arquitetural**
+1. **Event Sourcing**: Para auditoria completa
+2. **CQRS**: Separação de comandos e consultas
+3. **Message Queue**: Para processamento assíncrono
+4. **Microserviços**: Migração gradual por módulo
+5. **GraphQL**: Para maior flexibilidade de consultas

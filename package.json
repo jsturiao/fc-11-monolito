@@ -15,6 +15,13 @@
   },
   "scripts": {
     "test": "npm run tsc -- --noEmit && jest",
+    "test:e2e": "jest src/__tests__/api/ --verbose --detectOpenHandles",
+    "test:e2e:coverage": "jest src/__tests__/api/ --verbose --detectOpenHandles --coverage",
+    "test:products": "jest src/__tests__/api/products.e2e.spec.ts --verbose --detectOpenHandles",
+    "test:clients": "jest src/__tests__/api/clients.e2e.spec.ts --verbose --detectOpenHandles",
+    "test:checkout": "jest src/__tests__/api/checkout.e2e.spec.ts --verbose --detectOpenHandles",
+    "test:invoice": "jest src/__tests__/api/invoice.e2e.spec.ts --verbose --detectOpenHandles",
+    "test:integration": "jest src/__tests__/api/integration.e2e.spec.ts --verbose --detectOpenHandles",
     "tsc": "tsc"
   },
   "dependencies": {
